@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kids Clock Time Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            background: linear-gradient(to right, #74ebd5, #acb6e5);
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        .clock {
+    width: 90vw;          /* 90% of screen width */
+    height: 90vw;
+    max-width: 320px;     /* don’t grow too big on laptop */
+    max-height: 320px;
+    border: 8px solid #333;
+    border-radius: 50%;
+    margin: 20px auto;
+    position: relative;
+    background: white;
+}
+
+
+        .number {
+            position: absolute;
+            font-size: 22px;
+            font-weight: bold;
+            transform: translate(-50%, -50%);
+        }
+
+        .tick {
+            position: absolute;
+            background: black;
+            transform-origin: center;
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(0deg);
+        }
+
+        .hour {
+            width: 8px;
+            height: 70px;
+            background: black;
+        }
+
+        .minute {
+            width: 5px;
+            height: 110px;
+            background: blue;
+        }
+
+        .center {
+            width: 15px;
+            height: 15px;
+            background: red;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        input {
+    padding: 12px;
+    font-size: 20px;
+    width: 70px;
+    text-align: center;
+    border-radius: 8px;
+    
+}
+
+button {
+    padding: 12px 18px;
+    font-size: 18px;
+    border-radius: 8px;
+    color: azure;
+    background-color: rgb(119, 26, 241);
+}
+
+
+        #result {
+            margin-top: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🕒 Kids Time Learning Game</h1>
+
+<div style="margin-bottom:15px;">
+    <label style="font-size:18px;">Select Your Name:</label>
+    <select id="playerName" style="padding:8px; font-size:16px;">
+        <option value="Minnu">Minnu</option>
+        <option value="Mintu">Mintu</option>
+        
+    </select>
+</div>
+
+
+<div class="clock" id="clock">
+    <div class="hand hour" id="hourHand"></div>
+    <div class="hand minute" id="minuteHand"></div>
+    <div class="center"></div>
+</div>
+
+<div style="margin-top:15px;">
+    <input type="number" id="userHour" min="1" max="12" placeholder="HH" 
+           style="width:60px; padding:10px; font-size:18px; text-align:center;">
+
+    <span style="font-size:22px; font-weight:bold;">:</span>
+
+    <input type="number" id="userMinute" min="0" max="59" placeholder="MM" 
+           style="width:60px; padding:10px; font-size:18px; text-align:center;">
+</div>
+<br>
+
+<button onclick="checkTime()">Check</button>
+<button onclick="generateTime()">New Time</button>
+
+<div id="result"></div>
+
+<audio id="wrongSound" src="C:\Users\ARYA\Downloads\WrongAnswer.mp3"></audio>
+
+<script>
+
+let randomHour;
+let randomMinute;
+const clock = document.getElementById("clock");
+
+let centerX;
+let centerY;
+
+function updateCenter() {
+    const clockRect = clock.getBoundingClientRect();
+    centerX = clockRect.width / 2;
+    centerY = clockRect.height / 2;
+}
+
+updateCenter();
+window.addEventListener("resize", updateCenter);
+
+
+// 🔊 Sound Effects
+//const correctSound = new Audio("correct.mp3");
+const wrongSound = new Audio("WrongAnswer.mp3");
+
+
+// 🔢 Create numbers 1–12
+for (let i = 1; i <= 12; i++) {
+    const number = document.createElement("div");
+    number.className = "number";
+    number.innerText = i;
+
+    const angle = (i * 30) * Math.PI / 180;
+    const radius = 120;
+
+    const x = centerX + radius * Math.sin(angle);
+    const y = centerY - radius * Math.cos(angle);
+
+    number.style.left = x + "px";
+    number.style.top = y + "px";
+
+    clock.appendChild(number);
+}
+
+
+// 🕒 Create 60 perfectly centered ticks
+for (let i = 0; i < 60; i++) {
+
+    const tick = document.createElement("div");
+    tick.className = "tick";
+
+    const angle = (i * 6) * Math.PI / 180;
+    const outerRadius = 140;
+    const innerRadius = (i % 5 === 0) ? 125 : 135;
+
+    const x1 = centerX + outerRadius * Math.sin(angle);
+    const y1 = centerY - outerRadius * Math.cos(angle);
+
+    const x2 = centerX + innerRadius * Math.sin(angle);
+    const y2 = centerY - innerRadius * Math.cos(angle);
+
+    const length = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+
+    tick.style.width = "2px";
+    tick.style.height = length + "px";
+    tick.style.left = x1 + "px";
+    tick.style.top = y1-8 + "px";
+
+    const rotateDeg = i * 6;
+    tick.style.transform = `rotate(${rotateDeg}deg)`;
+
+    clock.appendChild(tick);
+}
+
+
+// 🎲 Random time
+function generateTime() {
+    randomHour = Math.floor(Math.random() * 12) + 1;
+    randomMinute = Math.floor(Math.random() * 60);
+
+    updateClock(randomHour, randomMinute);
+
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("userHour").value = "";
+    document.getElementById("userMinute").value = "";
+
+}
+
+function speak(message) {
+
+    const voices = window.speechSynthesis.getVoices();
+
+    // Try to find a female voice
+    let femaleVoice = voices.find(voice =>
+        voice.name.toLowerCase().includes("female") ||
+        voice.name.toLowerCase().includes("zira") ||
+        voice.name.toLowerCase().includes("samantha") ||
+        voice.name.toLowerCase().includes("karen") ||
+        voice.name.toLowerCase().includes("google us english")
+    );
+
+    let speech = new SpeechSynthesisUtterance(message);
+
+    if (femaleVoice) {
+        speech.voice = femaleVoice;
+    }
+
+    speech.rate = 0.9;   // slower for kids
+    speech.pitch = 1.3;  // slightly higher (cute tone)
+    speech.volume = 1;
+
+    window.speechSynthesis.speak(speech);
+}
+
+
+
+
+// 🕒 Update hands
+function updateClock(hour, minute) {
+    const hourDeg = (hour % 12) * 30 + (minute / 2);
+    const minuteDeg = minute * 6;
+
+    document.getElementById("hourHand").style.transform =
+        `translateX(-50%) rotate(${hourDeg}deg)`;
+
+    document.getElementById("minuteHand").style.transform =
+        `translateX(-50%) rotate(${minuteDeg}deg)`;
+}
+
+
+// ✅ Check answer
+function checkTime() {
+
+    let userHour = document.getElementById("userHour").value;
+    let userMinute = document.getElementById("userMinute").value;
+
+    let playerName = document.getElementById("playerName").value;
+    let wrongSound = document.getElementById("wrongSound");
+
+    let enteredHour = parseInt(userHour);
+    let enteredMinute = parseInt(userMinute);
+
+    if (enteredHour === randomHour && enteredMinute === randomMinute) {
+
+        document.getElementById("result").innerHTML = 
+            "✅ Correct! Well Done " + playerName + "!";
+        document.getElementById("result").style.color = "green";
+
+        speak("Great job " + playerName + "! You are correct!");
+
+    } else {
+
+       
+
+        document.getElementById("result").innerHTML =
+            "❌ Incorrect! Correct Time is " +
+            String(randomHour).padStart(2,'0') + ":" +
+            String(randomMinute).padStart(2,'0');
+
+        document.getElementById("result").style.color = "red";
+
+        speak("Oops " + playerName + ". Try again!");
+    }
+}
+
+
+
+generateTime();
+
+</script>
+
+</body>
+</html>
